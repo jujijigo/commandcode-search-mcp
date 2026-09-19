@@ -1,0 +1,47 @@
+name: Verify published
+
+# 独立于 publish 的验证工作流：publish 失败或需要复验时，可以只跑这一个。
+# 只读，不需要任何凭据。
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '要验证的版本或 dist-tag（留空则用 package.json 里的版本号）'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+
+      # 脚本自身 import 了 @modelcontextprotocol/sdk，依赖必须先装好
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify published package
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          for attempt in 1 2 3; do
+            if npm run verify:published ${VERSION:+"$VERSION"}; then
+              exit 0
+            fi
+            if [ "$attempt" = 3 ]; then
+              echo "::error::连续 3 次验证失败"
+              exit 1
+            fi
+            echo "第 ${attempt} 次未通过，30 秒后重试（registry 传播延迟）"
+            sleep 30
+          done

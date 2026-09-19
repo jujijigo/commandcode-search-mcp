@@ -4,6 +4,14 @@
   "description": "把 Command Code 的网页搜索服务暴露为 MCP 工具，供 Claude Code 等 MCP 客户端使用",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kywrl/commandcode-mcp-server.git"
+  },
+  "homepage": "https://github.com/kywrl/commandcode-mcp-server#readme",
+  "bugs": {
+    "url": "https://github.com/kywrl/commandcode-mcp-server/issues"
+  },
   "main": "./src/index.js",
   "bin": {
     "commandcode-mcp-server": "src/index.js"

@@ -61,14 +61,34 @@ function finish() {
   console.log(`✔ 全部检查通过${notes.length ? `（${notes.length} 项跳过）` : ''}`);
 }
 
-/** 不经过 shell 调 npm，避免 Windows 上的引号与 cmd /c 问题 */
+/**
+ * 不经过 shell 调 npm，避免 Windows 上的引号与 cmd /c 问题。
+ *
+ * npm-cli.js 的位置随安装方式而变：官方安装包与 mise/nvm 放在 node 同级或
+ * 上级的 node_modules 里，发行版的包管理器则放在别处。逐一探测，都找不到
+ * 才退回 PATH 上的 npm。
+ */
+function findNpmCli() {
+  const candidates = [
+    join(dirname(process.execPath), 'node_modules', 'npm', 'bin', 'npm-cli.js'),
+    join(dirname(process.execPath), '..', 'lib', 'node_modules', 'npm', 'bin', 'npm-cli.js'),
+    join(process.execPath, '..', '..', 'lib', 'node_modules', 'npm', 'bin', 'npm-cli.js'),
+  ];
+  return candidates.find((candidate) => existsSync(candidate));
+}
+
 function runNpm(args, cwd) {
-  const npmCli = join(dirname(process.execPath), 'node_modules', 'npm', 'bin', 'npm-cli.js');
-  if (!existsSync(npmCli)) {
-    throw new Error(`找不到 npm-cli.js：${npmCli}`);
-  }
+  const npmCli = findNpmCli();
+  const [command, commandArgs] = npmCli
+    ? [process.execPath, [npmCli, ...args]]
+    : [process.platform === 'win32' ? 'npm.cmd' : 'npm', args];
+
   return new Promise((resolvePromise, rejectPromise) => {
-    const child = spawn(process.execPath, [npmCli, ...args], { cwd, stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = spawn(command, commandArgs, {
+      cwd,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      shell: !npmCli && process.platform === 'win32',
+    });
     let out = '';
     let err = '';
     child.stdout.on('data', (chunk) => { out += chunk; });

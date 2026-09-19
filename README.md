@@ -127,6 +127,32 @@ npm run verify:published latest     # 按 dist-tag 解析
 
 stdout 是 stdio 传输的 JSON-RPC 通道，日志一律走 stderr，不要往 stdout 写东西。
 
+### 发布
+
+推送 `v*` tag 即触发 [.github/workflows/publish.yml](.github/workflows/publish.yml)：
+校验 tag 与 `package.json` 版本一致 → `npm ci` → `npm test` → `npm publish`
+→ 立刻验证 registry 上的产物。
+
+```bash
+npm version patch        # 升版本并打 tag
+git push --follow-tags
+```
+
+认证走 npm **Trusted Publishing**（OIDC），不需要任何长期 token，并自动附上
+provenance 签名。这需要在 npmjs.com 的包设置里一次性配置：
+
+| 字段 | 值 |
+| --- | --- |
+| Organization/user | `kywrl` |
+| Repository | `commandcode-mcp-server` |
+| Workflow filename | `publish.yml` |
+
+这个配置不匹配时不会提前报错，只会在 `npm publish` 时以 `ENEEDAUTH` 失败。
+工作流固定用 Node 24，因为 Trusted Publishing 要求 Node ≥ 22.14 且 npm ≥ 11.5.1。
+
+`.github/workflows/verify-published.yml` 是独立只读的验证任务，可在 Actions 页面
+手动触发并指定版本，用于发布失败后复验。
+
 ### 代码结构
 
 | 文件 | 职责 |

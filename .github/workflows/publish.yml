@@ -1,0 +1,71 @@
+name: Publish
+
+# 推送 v* tag 时发布到 npm，发布后立刻验证 registry 上的产物。
+#
+# 认证走 npm Trusted Publishing（OIDC），不需要任何长期 token。
+# 前置配置（一次性）：在 npmjs.com 的包设置里填 Trusted Publisher —
+#   Organization/user: kywrl
+#   Repository:        commandcode-mcp-server
+#   Workflow filename: publish.yml
+# 该配置不匹配时不会提前报错，只会在 npm publish 时以 ENEEDAUTH 失败。
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    # id-token 用于 OIDC 换取 npm 的短期凭据，同时自动生成 provenance
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          # Trusted Publishing 要求 Node >= 22.14 且 npm >= 11.5.1；
+          # 版本过低会在 publish 时报错，且错误信息不会直接指向版本问题
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+          # 官方建议 release 构建禁用缓存，避免缓存污染发布产物
+          package-manager-cache: false
+
+      - name: Check tag matches package.json version
+        run: |
+          pkg_version="v$(node -p "require('./package.json').version")"
+          if [ "$pkg_version" != "${GITHUB_REF_NAME}" ]; then
+            echo "::error::tag ${GITHUB_REF_NAME} 与 package.json 的版本 ${pkg_version} 不一致"
+            echo "通常意味着 tag 打在了错误的 commit 上"
+            exit 1
+          fi
+          echo "tag 与 package.json 一致：${GITHUB_REF_NAME}"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Publish to npm
+        run: npm publish --access public --provenance
+
+      # 发布成功不等于包可用：bin 被静默丢弃、files 漏目录这类问题
+      # 只有装下来跑一遍才看得出来
+      - name: Verify the published package
+        run: |
+          for attempt in 1 2 3; do
+            if npm run verify:published; then
+              exit 0
+            fi
+            if [ "$attempt" = 3 ]; then
+              echo "::error::发布成功但连续 3 次验证失败，请检查 registry 上的产物"
+              exit 1
+            fi
+            echo "第 ${attempt} 次未通过，30 秒后重试（registry 传播延迟）"
+            sleep 30
+          done
