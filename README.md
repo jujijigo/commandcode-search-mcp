@@ -94,6 +94,30 @@ npm test        # 11 个用例，覆盖参数校验与 MCP 协议层
 npm start       # 直接从源码启动（需已设置 COMMANDCODE_API_KEY）
 ```
 
+### 验证已发布的包
+
+`npm test` 测的是仓库里的源码，`npm run verify:published` 测的是**装到磁盘上的
+发布产物**，用来抓「本地正常、发布后坏掉」的问题——例如 `bin` 路径写成
+`./src/index.js` 时被 npm 静默丢弃、`files` 字段漏掉某个目录、改了代码忘了重新
+发布。
+
+```bash
+npm run verify:published            # 用 package.json 里的版本号
+npm run verify:published 1.0.0      # 指定版本
+npm run verify:published latest     # 按 dist-tag 解析
+```
+
+脚本会在临时目录里从 registry 全新安装，然后检查：
+
+- `bin` 字段确实存在，且指向的文件真的打进了 tarball
+- 安装结果是真实目录而非符号链接，lock 里的 `resolved` 指向 registry 且带 integrity
+- 发布出去的 `src/*.js` 与仓库源码**逐字节一致**（防止忘了重新发布）
+- MCP 握手成功，`tools/list` 与仓库源码里的 schema 一致
+- 设置了 `COMMANDCODE_API_KEY` 时，再跑一次真实的 `web_search` 调用
+
+任何一项不符都会以非 0 退出，可以直接串进 CI。没设 API Key 时跳过真实调用，
+不算失败。
+
 调试时可以看 stderr 上的日志，它会记录每次上游请求的路径、状态码与响应字节数：
 
 ```
@@ -109,11 +133,12 @@ stdout 是 stdio 传输的 JSON-RPC 通道，日志一律走 stderr，不要往 
 | --- | --- |
 | `src/index.js` | 入口：校验配置、接上 stdio 传输层 |
 | `src/server.js` | 组装 MCP Server，注册 `tools/list` 与 `tools/call` |
-| `src/schemas.js` | 两个工具的 JSON Schema 定义 |
+| `src/schemas.js` | 工具的 JSON Schema 定义 |
 | `src/tools.js` | 工具实现：参数校验、结果拼装 |
 | `src/client.js` | 上游 HTTP 客户端与错误归一 |
 | `src/config.js` | 环境变量读取与上游限制常量 |
 | `src/log.js` | stderr 日志 |
+| `scripts/verify-published.mjs` | 验证 registry 上的发布产物（不随包发布） |
 
 ## 许可
 

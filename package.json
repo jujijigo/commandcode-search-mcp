@@ -17,7 +17,8 @@
   },
   "scripts": {
     "start": "node src/index.js",
-    "test": "node --test"
+    "test": "node --test",
+    "verify:published": "node scripts/verify-published.mjs"
   },
   "keywords": [
     "mcp",
