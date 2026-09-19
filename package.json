@@ -1,6 +1,6 @@
 {
   "name": "commandcode-mcp-server",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "把 Command Code 的网页搜索服务暴露为 MCP 工具，供 Claude Code 等 MCP 客户端使用",
   "type": "module",
   "license": "MIT",
