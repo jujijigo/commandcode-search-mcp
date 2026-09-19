@@ -1,9 +1,18 @@
 name: Verify published
 
-# 只做「复验」，不监听 tag：publish.yml 在发布后已经验证过一次，若这里也监听
-# tag，两个工作流会并行启动，此时包往往还没发布完，必然误报失败（1.0.1 就是这样
-# 红过一次）。发布失败、手动补发、或想验证任意历史版本时，从这里手动触发。
+# 两条触发路径：
+#
+# 1. workflow_run：publish.yml 成功后自动接手验证。放在这里而不是塞进
+#    publish job 的末尾，是因为验证要读 registry 元数据，而刚发布完的那个
+#    runner 常拿到陈旧缓存（1.0.2 那次 2 分钟都没刷新，导致发布明明成功
+#    却报红）。换成全新 runner、且晚于发布启动，能绕开这个问题。
+#    这样 Publish 的绿/红只表示「是否发布成功」，语义不再被验证的时序污染。
+#
+# 2. workflow_dispatch：复验用。发布失败后补验、或想验证任意历史版本时手动触发。
 on:
+  workflow_run:
+    workflows: [Publish]
+    types: [completed]
   workflow_dispatch:
     inputs:
       version:
@@ -17,8 +26,18 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    # publish 失败时没有产物可验，直接跳过（失败原因看 Publish 的日志）
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    # 同一 commit 只跑一个，避免连续打 tag 时重复验证
+    concurrency:
+      group: verify-published-${{ github.event.workflow_run.head_sha || github.sha }}
+      cancel-in-progress: false
     steps:
+      # workflow_run 默认 checkout 默认分支，这里要的是被发布的那个 commit，
+      # 否则「发布产物 vs 仓库源码」的比对会拿错基准
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - uses: actions/setup-node@v6
         with:
@@ -30,6 +49,7 @@ jobs:
 
       - name: Verify published package
         env:
+          # 自动触发时不传版本：被发布的 commit 其 package.json 版本号即发布版本
           VERSION: ${{ inputs.version }}
         run: |
           for attempt in $(seq 1 6); do
@@ -40,6 +60,6 @@ jobs:
               echo "::error::连续 6 次验证失败"
               exit 1
             fi
-            echo "第 ${attempt} 次未通过，20 秒后重试（registry 传播延迟）"
+            echo "第 ${attempt} 次未通过，20 秒后重试（registry 缓存/传播延迟）"
             sleep 20
           done

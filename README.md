@@ -135,13 +135,20 @@ npm run verify:published latest     # 按 dist-tag 解析
 ### 发布
 
 推送 `v*` tag 即触发 [.github/workflows/publish.yml](.github/workflows/publish.yml)：
-校验 tag 与 `package.json` 版本一致 → `npm ci` → `npm test` → `npm publish`
-→ 验证 registry 上的产物。
+校验 tag 与 `package.json` 版本一致 → `npm ci` → `npm test` → `npm publish`。
 
 ```bash
 npm version patch        # 升版本并打 tag
 git push --follow-tags
 ```
+
+发布成功后，[.github/workflows/verify-published.yml](.github/workflows/verify-published.yml)
+通过 `workflow_run` 自动接手验证产物。**Publish 的绿/红只表示「是否发布成功」**，
+产物是否可用看 Verify published 的结果。
+
+两者拆开是有原因的：验证要读 registry 元数据，而刚发布完的那个 runner 常拿到
+陈旧缓存（1.0.2 那次两分钟都没刷新，导致发布明明成功却报红）。换成全新 runner
+且晚于发布启动，能绕开这个问题。
 
 认证走 npm **Trusted Publishing**（OIDC），不需要任何长期 token，并自动附上
 provenance 签名。这需要在 npmjs.com 的包设置里一次性配置：
@@ -154,10 +161,6 @@ provenance 签名。这需要在 npmjs.com 的包设置里一次性配置：
 
 这个配置不匹配时不会提前报错，只会在 `npm publish` 时以 `ENEEDAUTH` 失败。
 工作流固定用 Node 24，因为 Trusted Publishing 要求 Node ≥ 22.14 且 npm ≥ 11.5.1。
-
-[.github/workflows/verify-published.yml](.github/workflows/verify-published.yml)
-是独立只读的验证任务，可在 Actions 页面手动触发并指定版本。它不监听 tag——
-发布后的验证由 `publish.yml` 承担，两者若同时监听会因抢时间而误报失败。
 
 ### 代码结构
 

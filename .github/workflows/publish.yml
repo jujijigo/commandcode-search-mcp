@@ -23,6 +23,9 @@ jobs:
     permissions:
       id-token: write
       contents: read
+    # 供下游的 verify 工作流读取（workflow_run 拿不到本次 push 的 tag 名）
+    outputs:
+      version: ${{ steps.publish.outputs.version }}
     steps:
       - uses: actions/checkout@v6
 
@@ -51,24 +54,13 @@ jobs:
       - name: Run tests
         run: npm test
 
+      # 这里的成功只代表「发布成功」，不代表包可用。产物验证由
+      # verify-published.yml 通过 workflow_run 在发布完成后接手——
+      # 拆开是因为验证要读 registry 元数据，而刚发布完的那个 runner
+      # 常拿到陈旧缓存（1.0.2 那次 2 分钟都没刷新），换一个全新 runner
+      # 能绕开这个问题，也不必让发布结果被验证的时序问题拖累。
       - name: Publish to npm
-        run: npm publish --access public --provenance
-
-      # 发布成功不等于包可用：bin 被静默丢弃、files 漏目录这类问题
-      # 只有装下来跑一遍才看得出来。
-      #
-      # 重试 6 次、每次间隔 20 秒（共约 2 分钟）：实测 registry 传播耗时
-      # 约 70 秒，早先 3×30 秒的窗口在 1.0.1 那次差点不够用。
-      - name: Verify the published package
+        id: publish
         run: |
-          for attempt in $(seq 1 6); do
-            if npm run verify:published; then
-              exit 0
-            fi
-            if [ "$attempt" = 6 ]; then
-              echo "::error::发布成功但连续 6 次验证失败，请检查 registry 上的产物"
-              exit 1
-            fi
-            echo "第 ${attempt} 次未通过，20 秒后重试（registry 传播延迟）"
-            sleep 20
-          done
+          npm publish --access public --provenance
+          echo "version=$(node -p 'require("./package.json").version')" >> "$GITHUB_OUTPUT"
