@@ -1,30 +1,26 @@
-# 把 Command Code 的网页搜索服务暴露为 MCP 工具
+# commandcode-mcp-server
 
-`commandcode-mcp-server` 是一个 stdio 类型的 [MCP](https://modelcontextprotocol.io)
-服务，封装 Command Code 的 `/alpha/web-search` 接口，提供 `web_search` 工具。
-任何支持 MCP 的客户端（Claude Code、Claude Desktop 等）都可以接入。
+把 Command Code 的网页搜索服务封装为 [MCP](https://modelcontextprotocol.io) 服务。
 
-## 安装
+stdio 类型，提供 `web_search` 工具，任何支持 MCP 的客户端（Claude Code、
+Claude Desktop 等）都可以接入。已发布到 npm，无需预先安装——`npx` 会在首次
+运行时自动拉取。
 
-```bash
-npm install -g commandcode-mcp-server
-```
+## 使用
 
-或直接由 `npx` 按需拉取，无需预先安装（见下面的配置示例）。
+### 配置
 
-## 配置
-
-### Claude Code
+#### Claude Code
 
 ```bash
 claude mcp add commandcode-mcp-server --scope user \
   -e COMMANDCODE_API_KEY=user_xxxxxxxx \
-  -- npx -y commandcode-mcp-server
+  -- npx -y commandcode-mcp-server@latest
 ```
 
-### 手写 JSON
+#### 手写 JSON
 
-写在 `~/.claude.json` 的顶层 `mcpServers` 里：
+写在 `~/.claude.json` 的顶层 `mcpServers` 里（项目的 `.mcp.json` 同样适用）：
 
 ```json
 {
@@ -32,7 +28,7 @@ claude mcp add commandcode-mcp-server --scope user \
     "commandcode-mcp-server": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "commandcode-mcp-server"],
+      "args": ["-y", "commandcode-mcp-server@latest"],
       "env": {
         "COMMANDCODE_API_KEY": "user_xxxxxxxx"
       }
@@ -41,25 +37,19 @@ claude mcp add commandcode-mcp-server --scope user \
 }
 ```
 
-Windows 上如果 `npx` 不在 `PATH` 里，或是遇到 shell 解析问题，可以显式套一层
-`cmd /c`：
+用 `@latest` 还是钉死版本，取决于你要不要自动跟进新版本：`@latest` 每次启动
+都会向 registry 查询并拉取最新版，配置不用动；写成 `@1.0.2` 则永久停在那个
+版本，需要手动改。
+
+#### Windows
+
+如果 `npx` 不在 `PATH` 里，或是遇到 shell 解析问题，可以显式套一层 `cmd /c`：
 
 ```json
 {
   "type": "stdio",
   "command": "cmd",
-  "args": ["/c", "npx", "-y", "commandcode-mcp-server"],
-  "env": { "COMMANDCODE_API_KEY": "user_xxxxxxxx" }
-}
-```
-
-要在本机开发版上跑（未发布到 npm 时），把包名换成路径即可：
-
-```json
-{
-  "type": "stdio",
-  "command": "npx",
-  "args": ["-y", "file:D:/workspace/commandcode-mcp-server"],
+  "args": ["/c", "npx", "-y", "commandcode-mcp-server@latest"],
   "env": { "COMMANDCODE_API_KEY": "user_xxxxxxxx" }
 }
 ```
@@ -71,9 +61,9 @@ Windows 上如果 `npx` 不在 `PATH` 里，或是遇到 shell 解析问题，�
 | `COMMANDCODE_API_KEY` | 是 | — | Command Code 的 API Key，`user_` 开头。缺失时进程会直接退出 |
 | `COMMANDCODE_BASE_URL` | 否 | `https://api.commandcode.ai` | 上游地址，便于指向自建或测试环境 |
 
-## 工具
+### 工具
 
-### `web_search`
+#### `web_search`
 
 检索互联网，返回标题、链接与摘要。
 
@@ -88,10 +78,34 @@ Windows 上如果 `npx` 不在 `PATH` 里，或是遇到 shell 解析问题，�
 
 ## 开发
 
+### 常用命令
+
 ```bash
 npm install
-npm test        # 11 个用例，覆盖参数校验与 MCP 协议层
+npm test        # 12 个用例，覆盖参数校验与 MCP 协议层
 npm start       # 直接从源码启动（需已设置 COMMANDCODE_API_KEY）
+```
+
+调试时可以看 stderr 上的日志，它会记录每次上游请求的路径、状态码与响应字节数：
+
+```
+[commandcode-mcp-server] 启动 https://api.commandcode.ai
+[commandcode-mcp-server] POST /alpha/web-search -> 200（1359 字节）
+```
+
+stdout 是 stdio 传输的 JSON-RPC 通道，日志一律走 stderr，不要往 stdout 写东西。
+
+### 接入本地源码
+
+要调试尚未发布的改动，把配置里的包名换成仓库路径即可：
+
+```json
+{
+  "type": "stdio",
+  "command": "npx",
+  "args": ["-y", "file:D:/workspace/commandcode-mcp-server"],
+  "env": { "COMMANDCODE_API_KEY": "user_xxxxxxxx" }
+}
 ```
 
 ### 验证已发布的包
@@ -118,20 +132,11 @@ npm run verify:published latest     # 按 dist-tag 解析
 任何一项不符都会以非 0 退出，可以直接串进 CI。没设 API Key 时跳过真实调用，
 不算失败。
 
-调试时可以看 stderr 上的日志，它会记录每次上游请求的路径、状态码与响应字节数：
-
-```
-[commandcode-mcp-server] 启动 https://api.commandcode.ai
-[commandcode-mcp-server] POST /alpha/web-search -> 200（1359 字节）
-```
-
-stdout 是 stdio 传输的 JSON-RPC 通道，日志一律走 stderr，不要往 stdout 写东西。
-
 ### 发布
 
 推送 `v*` tag 即触发 [.github/workflows/publish.yml](.github/workflows/publish.yml)：
 校验 tag 与 `package.json` 版本一致 → `npm ci` → `npm test` → `npm publish`
-→ 立刻验证 registry 上的产物。
+→ 验证 registry 上的产物。
 
 ```bash
 npm version patch        # 升版本并打 tag
@@ -150,8 +155,9 @@ provenance 签名。这需要在 npmjs.com 的包设置里一次性配置：
 这个配置不匹配时不会提前报错，只会在 `npm publish` 时以 `ENEEDAUTH` 失败。
 工作流固定用 Node 24，因为 Trusted Publishing 要求 Node ≥ 22.14 且 npm ≥ 11.5.1。
 
-`.github/workflows/verify-published.yml` 是独立只读的验证任务，可在 Actions 页面
-手动触发并指定版本，用于发布失败后复验。
+[.github/workflows/verify-published.yml](.github/workflows/verify-published.yml)
+是独立只读的验证任务，可在 Actions 页面手动触发并指定版本。它不监听 tag——
+发布后的验证由 `publish.yml` 承担，两者若同时监听会因抢时间而误报失败。
 
 ### 代码结构
 
@@ -162,7 +168,7 @@ provenance 签名。这需要在 npmjs.com 的包设置里一次性配置：
 | `src/schemas.js` | 工具的 JSON Schema 定义 |
 | `src/tools.js` | 工具实现：参数校验、结果拼装 |
 | `src/client.js` | 上游 HTTP 客户端与错误归一 |
-| `src/config.js` | 环境变量读取与上游限制常量 |
+| `src/config.js` | 环境变量读取、上游限制常量、版本号（取自 package.json） |
 | `src/log.js` | stderr 日志 |
 | `scripts/verify-published.mjs` | 验证 registry 上的发布产物（不随包发布） |
 
