@@ -101,8 +101,17 @@ function runNpm(args, cwd) {
   });
 }
 
+/**
+ * 读 registry 元数据。
+ *
+ * 必须破 CDN 缓存：registry 返回 `cache-control: public, max-age=300`，
+ * 根文档被 Cloudflare 缓存长达 5 分钟，刚发布的版本在里面看不到
+ * （实测 1.0.4 发布后 2 分钟、1.0.2 发布后同）。带 no-cache 头无效——
+ * 实测仍返回 cf-cache-status: HIT；加一个唯一的查询参数才会 MISS 并回源。
+ */
 async function fetchJson(url) {
-  const response = await fetch(url, { headers: { accept: 'application/json' } });
+  const bust = `${url}${url.includes('?') ? '&' : '?'}_=${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const response = await fetch(bust, { headers: { accept: 'application/json' } });
   if (!response.ok) {
     throw new Error(`GET ${url} -> HTTP ${response.status}`);
   }
