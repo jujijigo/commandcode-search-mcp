@@ -1,11 +1,9 @@
 name: Verify published
 
-# 独立于 publish 的验证工作流：publish 失败或需要复验时，可以只跑这一个。
-# 只读，不需要任何凭据。
+# 只做「复验」，不监听 tag：publish.yml 在发布后已经验证过一次，若这里也监听
+# tag，两个工作流会并行启动，此时包往往还没发布完，必然误报失败（1.0.1 就是这样
+# 红过一次）。发布失败、手动补发、或想验证任意历史版本时，从这里手动触发。
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
     inputs:
       version:
@@ -34,14 +32,14 @@ jobs:
         env:
           VERSION: ${{ inputs.version }}
         run: |
-          for attempt in 1 2 3; do
+          for attempt in $(seq 1 6); do
             if npm run verify:published ${VERSION:+"$VERSION"}; then
               exit 0
             fi
-            if [ "$attempt" = 3 ]; then
-              echo "::error::连续 3 次验证失败"
+            if [ "$attempt" = 6 ]; then
+              echo "::error::连续 6 次验证失败"
               exit 1
             fi
-            echo "第 ${attempt} 次未通过，30 秒后重试（registry 传播延迟）"
-            sleep 30
+            echo "第 ${attempt} 次未通过，20 秒后重试（registry 传播延迟）"
+            sleep 20
           done

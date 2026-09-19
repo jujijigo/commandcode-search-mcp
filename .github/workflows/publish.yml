@@ -55,17 +55,20 @@ jobs:
         run: npm publish --access public --provenance
 
       # 发布成功不等于包可用：bin 被静默丢弃、files 漏目录这类问题
-      # 只有装下来跑一遍才看得出来
+      # 只有装下来跑一遍才看得出来。
+      #
+      # 重试 6 次、每次间隔 20 秒（共约 2 分钟）：实测 registry 传播耗时
+      # 约 70 秒，早先 3×30 秒的窗口在 1.0.1 那次差点不够用。
       - name: Verify the published package
         run: |
-          for attempt in 1 2 3; do
+          for attempt in $(seq 1 6); do
             if npm run verify:published; then
               exit 0
             fi
-            if [ "$attempt" = 3 ]; then
-              echo "::error::发布成功但连续 3 次验证失败，请检查 registry 上的产物"
+            if [ "$attempt" = 6 ]; then
+              echo "::error::发布成功但连续 6 次验证失败，请检查 registry 上的产物"
               exit 1
             fi
-            echo "第 ${attempt} 次未通过，30 秒后重试（registry 传播延迟）"
-            sleep 30
+            echo "第 ${attempt} 次未通过，20 秒后重试（registry 传播延迟）"
+            sleep 20
           done
