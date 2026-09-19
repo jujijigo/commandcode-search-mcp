@@ -1,7 +1,7 @@
 {
   "name": "commandcode-mcp-server",
   "version": "1.0.0",
-  "description": "把 Command Code 的网页搜索与抓取服务暴露为 MCP 工具，供 Claude Code 等 MCP 客户端使用",
+  "description": "把 Command Code 的网页搜索服务暴露为 MCP 工具，供 Claude Code 等 MCP 客户端使用",
   "type": "module",
   "license": "MIT",
   "main": "./src/index.js",
@@ -24,7 +24,6 @@
     "model-context-protocol",
     "command-code",
     "web-search",
-    "web-fetch",
     "claude"
   ],
   "dependencies": {

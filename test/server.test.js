@@ -28,11 +28,11 @@ describe('MCP server 协议层', () => {
     await server.close();
   });
 
-  it('tools/list 暴露 web_search 与 web_fetch', async () => {
+  it('tools/list 只暴露 web_search', async () => {
     const { client, server } = await connect();
     const { tools } = await client.listTools();
 
-    assert.deepEqual(tools.map((t) => t.name).sort(), ['web_fetch', 'web_search']);
+    assert.deepEqual(tools.map((t) => t.name), ['web_search']);
     const search = tools.find((t) => t.name === 'web_search');
     assert.deepEqual(search.inputSchema.required, ['query']);
     assert.equal(search.inputSchema.additionalProperties, false);

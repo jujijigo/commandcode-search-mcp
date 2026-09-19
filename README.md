@@ -1,9 +1,8 @@
-# 把 Command Code 的网页搜索与抓取服务暴露为 MCP 工具
+# 把 Command Code 的网页搜索服务暴露为 MCP 工具
 
 `commandcode-mcp-server` 是一个 stdio 类型的 [MCP](https://modelcontextprotocol.io)
-服务，封装 Command Code 的 `/alpha/web-search` 与 `/alpha/web-fetch` 两个接口，
-提供 `web_search` 与 `web_fetch` 两个工具。任何支持 MCP 的客户端（Claude Code、
-Claude Desktop 等）都可以接入。
+服务，封装 Command Code 的 `/alpha/web-search` 接口，提供 `web_search` 工具。
+任何支持 MCP 的客户端（Claude Code、Claude Desktop 等）都可以接入。
 
 ## 安装
 
@@ -87,27 +86,11 @@ Windows 上如果 `npx` 不在 `PATH` 里，或是遇到 shell 解析问题，�
 
 `allowed_domains` 与 `blocked_domains` 互斥，同时传会直接报错。
 
-### `web_fetch`
-
-抓取一个已知 URL 的正文，能处理 JavaScript 渲染、反爬与重定向。
-
-| 参数 | 类型 | 必填 | 说明 |
-| --- | --- | --- | --- |
-| `url` | string | 是 | 完整的公开 URL，`http` 会被自动升级为 `https` |
-| `format` | string | 否 | `markdown`（默认）、`text` 或 `html` |
-| `startIndex` | integer | 否 | 从正文第几个字符开始返回，默认 0，用于长文续读 |
-| `timeout` | integer | 否 | 本次抓取超时秒数，默认 60，上限 120 |
-
-上游 `/alpha/web-fetch` 既不截断也不分页（实测抓 `World_War_II` 会返回 17 万
-字符整页），因此本服务在客户端侧做窗口化：正文超过 100000 字符时只返回首个
-窗口，并在末尾给出 `startIndex=N` 的续读提示。内容没被截断时不会有任何提示
-文字混进正文。
-
 ## 开发
 
 ```bash
 npm install
-npm test        # 21 个用例，覆盖参数校验、分页与 MCP 协议层
+npm test        # 11 个用例，覆盖参数校验与 MCP 协议层
 npm start       # 直接从源码启动（需已设置 COMMANDCODE_API_KEY）
 ```
 
@@ -127,7 +110,7 @@ stdout 是 stdio 传输的 JSON-RPC 通道，日志一律走 stderr，不要往 
 | `src/index.js` | 入口：校验配置、接上 stdio 传输层 |
 | `src/server.js` | 组装 MCP Server，注册 `tools/list` 与 `tools/call` |
 | `src/schemas.js` | 两个工具的 JSON Schema 定义 |
-| `src/tools.js` | 工具实现：参数校验、结果拼装、fetch 分页 |
+| `src/tools.js` | 工具实现：参数校验、结果拼装 |
 | `src/client.js` | 上游 HTTP 客户端与错误归一 |
 | `src/config.js` | 环境变量读取与上游限制常量 |
 | `src/log.js` | stderr 日志 |

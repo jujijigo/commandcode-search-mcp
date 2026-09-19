@@ -10,16 +10,6 @@ const DEFAULT_BASE_URL = 'https://api.commandcode.ai';
 /** 上游硬限制：numResults > 10 会返回 400 Too big，< 1 返回 400 Too small。 */
 export const NUM_RESULTS = { min: 1, max: 10, fallback: 5 };
 
-/**
- * web_fetch 的分页窗口。上游 /alpha/web-fetch 既不截断也不分页（实测抓
- * World_War_II 会返回 17 万字符整页），窗口与 startIndex 续读都是官方 CLI
- * 在客户端做的事，这里照做，以免整页灌进上下文。
- */
-export const FETCH_WINDOW = 100_000;
-export const FETCH_TIMEOUT = { min: 1, max: 120, fallback: 60 };
-
-export const FETCH_FORMATS = ['markdown', 'text', 'html'];
-
 export const SERVER_NAME = 'commandcode-mcp-server';
 export const SERVER_VERSION = '1.0.0';
 

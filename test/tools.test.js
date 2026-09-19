@@ -2,11 +2,8 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import {
-  clampFetchTimeout,
   clampNumResults,
-  clampStartIndex,
   normalizeDomains,
-  runWebFetch,
   runWebSearch,
 } from '../src/tools.js';
 
@@ -20,11 +17,6 @@ function fakeClient(response) {
       if (response instanceof Error) throw response;
       return response;
     },
-    fetch: async (body, timeoutMs) => {
-      calls.push({ ...body, timeoutMs });
-      if (response instanceof Error) throw response;
-      return response;
-    },
   };
 }
 
@@ -35,18 +27,6 @@ describe('clamp 工具函数', () => {
     assert.equal(clampNumResults(3.6), 4);
     assert.equal(clampNumResults('abc'), 5);
     assert.equal(clampNumResults(undefined), 5);
-  });
-
-  it('把 startIndex 归一到非负整数', () => {
-    assert.equal(clampStartIndex(-5), 0);
-    assert.equal(clampStartIndex(10.9), 10);
-    assert.equal(clampStartIndex('abc'), 0);
-  });
-
-  it('把 timeout 夹在 1..120 秒', () => {
-    assert.equal(clampFetchTimeout(0), 1);
-    assert.equal(clampFetchTimeout(500), 120);
-    assert.equal(clampFetchTimeout(undefined), 60);
   });
 
   it('清洗域名数组', () => {
@@ -102,74 +82,5 @@ describe('web_search', () => {
 
     assert.equal(result.isError, true);
     assert.match(result.content[0].text, /搜索失败：上游炸了/);
-  });
-});
-
-describe('web_fetch', () => {
-  it('短内容原样返回，不加分页提示', async () => {
-    const client = fakeClient({ content: 'short body' });
-    const result = await runWebFetch(client, { url: 'https://a.test' });
-
-    assert.equal(result.content[0].text, 'short body');
-    assert.equal(client.calls[0].timeoutMs, 60_000);
-    assert.equal(client.calls[0].format, 'markdown');
-  });
-
-  it('不把 startIndex / timeout 透给上游', async () => {
-    const client = fakeClient({ content: 'body' });
-    await runWebFetch(client, { url: 'https://a.test', startIndex: 2, timeout: 10, format: 'text' });
-
-    assert.deepEqual(Object.keys(client.calls[0]).sort(), ['format', 'timeoutMs', 'url']);
-  });
-
-  it('超长内容截断并给出续读下标', async () => {
-    const body = 'x'.repeat(100_050);
-    const client = fakeClient({ content: body });
-    const result = await runWebFetch(client, { url: 'https://a.test' });
-
-    assert.equal(result.content[0].text.length, 100_000 + '\n\n[内容未结束，剩余 50 字符；续读请传 startIndex=100000]'.length);
-    assert.match(result.content[0].text, /续读请传 startIndex=100000/);
-  });
-
-  it('续读时带上头部说明与剩余量', async () => {
-    const body = 'x'.repeat(200_050);
-    const client = fakeClient({ content: body });
-    const result = await runWebFetch(client, { url: 'https://a.test', startIndex: 100_000 });
-
-    assert.match(result.content[0].text, /正文共 200050 字符，本次从第 100000 字符开始/);
-    assert.match(result.content[0].text, /剩余 50 字符/);
-  });
-
-  it('续读到最后一页时只带头部、不带续读提示', async () => {
-    const body = 'x'.repeat(100_050);
-    const client = fakeClient({ content: body });
-    const result = await runWebFetch(client, { url: 'https://a.test', startIndex: 100_000 });
-
-    assert.match(result.content[0].text, /本次从第 100000 字符开始/);
-    assert.doesNotMatch(result.content[0].text, /内容未结束/);
-  });
-
-  it('startIndex 越界时明确报错', async () => {
-    const client = fakeClient({ content: 'short' });
-    const result = await runWebFetch(client, { url: 'https://a.test', startIndex: 99 });
-
-    assert.equal(result.isError, true);
-    assert.match(result.content[0].text, /已越界/);
-  });
-
-  it('内容为空时报错', async () => {
-    const client = fakeClient({ content: '   ' });
-    const result = await runWebFetch(client, { url: 'https://a.test' });
-
-    assert.equal(result.isError, true);
-    assert.match(result.content[0].text, /内容为空/);
-  });
-
-  it('缺少 url 时报错，且不发起请求', async () => {
-    const client = fakeClient({ content: 'x' });
-    const result = await runWebFetch(client, {});
-
-    assert.equal(result.isError, true);
-    assert.equal(client.calls.length, 0);
   });
 });

@@ -5,11 +5,10 @@ import { createClient } from './client.js';
 import { readConfig, SERVER_NAME, SERVER_VERSION } from './config.js';
 import { log } from './log.js';
 import { TOOLS } from './schemas.js';
-import { errorResult, runWebFetch, runWebSearch } from './tools.js';
+import { errorResult, runWebSearch } from './tools.js';
 
 const HANDLERS = {
   web_search: runWebSearch,
-  web_fetch: runWebFetch,
 };
 
 /**
@@ -38,7 +37,7 @@ export function createServer(config = readConfig()) {
     try {
       return await handler(client, args);
     } catch (error) {
-      // runWebSearch / runWebFetch 自己会兜住上游错误，
+      // runWebSearch 自己会兜住上游错误，
       // 走到这里说明是本层的意外异常，记全栈但只把消息给模型。
       log(`工具 ${name} 执行异常：${error.stack || error.message}`);
       return errorResult(`工具 ${name} 执行异常：${error.message}`);
