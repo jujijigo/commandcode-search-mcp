@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { describe, it } from 'node:test';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 
 import { createServer } from '../src/server.js';
-import { SERVER_NAME } from '../src/config.js';
+import { SERVER_NAME, SERVER_VERSION } from '../src/config.js';
 
 /** 用内存传输层把真的 MCP Client 接到真的 Server 上，走完整的握手与调用链路 */
 async function connect(config = { baseUrl: 'https://api.example.test', apiKey: 'user_test' }) {
@@ -25,6 +26,17 @@ describe('MCP server 协议层', () => {
     const { client, server } = await connect();
     assert.equal(client.getServerVersion().name, SERVER_NAME);
     assert.ok(client.getServerCapabilities().tools !== undefined);
+    await server.close();
+  });
+
+  // 版本号曾经是手写常量，发 1.0.1 时漏改，握手时仍上报 1.0.0。
+  // 这条用例锁住「只有 package.json 一处真相」。
+  it('上报的版本号与 package.json 一致', async () => {
+    const pkg = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
+    assert.equal(SERVER_VERSION, pkg.version);
+
+    const { client, server } = await connect();
+    assert.equal(client.getServerVersion().version, pkg.version);
     await server.close();
   });
 
