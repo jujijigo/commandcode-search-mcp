@@ -6,7 +6,7 @@
   "license": "MIT",
   "main": "./src/index.js",
   "bin": {
-    "commandcode-mcp-server": "./src/index.js"
+    "commandcode-mcp-server": "src/index.js"
   },
   "files": [
     "src",
