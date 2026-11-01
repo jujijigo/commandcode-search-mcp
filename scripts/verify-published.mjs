@@ -77,6 +77,24 @@ function findNpmCli() {
   return candidates.find((candidate) => existsSync(candidate));
 }
 
+/**
+ * 去掉从调用方继承的 allow-scripts 配置。
+ *
+ * `npm run` 会把 .npmrc 的每一项导出成 npm_config_<key>（连字符换成下划线），
+ * 子进程再调 npm 时这些值等价于命令行参数。npm 9 起新增的 allow-scripts 安全
+ * 策略就是这样渗进来的：本机全局 .npmrc 有 allow-scripts=agent-browser，于是
+ * 子进程拿到 npm_config_allow_scripts，新版 npm 视同传了 --allow-scripts，
+ * 在 project-scoped install 下直接以 EALLOWSCRIPTS 失败。
+ * 这里装的是临时目录，调用方的本地策略不该影响结果。
+ *
+ * 只删这一项：registry 等其他键仍要透传，否则自定义镜像下的验证会跑到
+ * npmjs.org 上去。
+ */
+function cleanEnv(env = process.env) {
+  const { npm_config_allow_scripts: _ignored, ...rest } = env;
+  return rest;
+}
+
 function runNpm(args, cwd) {
   const npmCli = findNpmCli();
   const [command, commandArgs] = npmCli
@@ -88,6 +106,9 @@ function runNpm(args, cwd) {
       cwd,
       stdio: ['ignore', 'pipe', 'pipe'],
       shell: !npmCli && process.platform === 'win32',
+      // 剔除调用方渗进来的 allow-scripts，否则 project-scoped install 会以
+      // EALLOWSCRIPTS 失败（详见 cleanEnv）
+      env: cleanEnv(),
     });
     let out = '';
     let err = '';

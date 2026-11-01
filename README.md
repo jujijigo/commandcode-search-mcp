@@ -1,4 +1,4 @@
-# commandcode-search-mcp
+# @jujijigo/commandcode-search-mcp
 
 把 Command Code 的网页搜索服务封装为 [MCP](https://modelcontextprotocol.io) 服务。
 
@@ -6,9 +6,10 @@ stdio 类型，提供 `web_search` 工具，任何支持 MCP 的客户端（Clau
 Claude Desktop 等）都可以接入。已发布到 npm，无需预先安装——`npx` 会在首次
 运行时自动拉取。
 
-> **从 `commandcode-mcp-server` 迁移过来？** 包已更名为 `commandcode-search-mcp`，
-> 环境变量 `COMMANDCODE_API_KEY` / `COMMANDCODE_BASE_URL` 保持不变，
-> 只需把配置里的包名换掉即可。
+> **迁移过来？** 包已更名为 `@jujijigo/commandcode-search-mcp`（此前依次叫过
+> `commandcode-mcp-server` 和 `commandcode-search-mcp`）。环境变量
+> `COMMANDCODE_API_KEY` / `COMMANDCODE_BASE_URL` 保持不变，只需把配置里的包名换成
+> 带 scope 的新名字即可。
 
 ## 使用
 
@@ -19,7 +20,7 @@ Claude Desktop 等）都可以接入。已发布到 npm，无需预先安装—�
 ```bash
 claude mcp add commandcode-search-mcp --scope user \
   -e COMMANDCODE_API_KEY=user_xxxxxxxx \
-  -- npx -y commandcode-search-mcp@latest
+  -- npx -y @jujijigo/commandcode-search-mcp@latest
 ```
 
 #### 手写 JSON
@@ -32,7 +33,7 @@ claude mcp add commandcode-search-mcp --scope user \
     "commandcode-search-mcp": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "commandcode-search-mcp@latest"],
+      "args": ["-y", "@jujijigo/commandcode-search-mcp@latest"],
       "env": {
         "COMMANDCODE_API_KEY": "user_xxxxxxxx"
       }
@@ -53,7 +54,7 @@ claude mcp add commandcode-search-mcp --scope user \
 {
   "type": "stdio",
   "command": "cmd",
-  "args": ["/c", "npx", "-y", "commandcode-search-mcp@latest"],
+  "args": ["/c", "npx", "-y", "@jujijigo/commandcode-search-mcp@latest"],
   "env": { "COMMANDCODE_API_KEY": "user_xxxxxxxx" }
 }
 ```
@@ -93,8 +94,8 @@ npm start       # 直接从源码启动（需已设置 COMMANDCODE_API_KEY）
 调试时可以看 stderr 上的日志，它会记录每次上游请求的路径、状态码与响应字节数：
 
 ```
-[commandcode-search-mcp] 启动 https://api.commandcode.ai
-[commandcode-search-mcp] POST /alpha/web-search -> 200（1359 字节）
+[@jujijigo/commandcode-search-mcp] 启动 https://api.commandcode.ai
+[@jujijigo/commandcode-search-mcp] POST /alpha/web-search -> 200（1359 字节）
 ```
 
 stdout 是 stdio 传输的 JSON-RPC 通道，日志一律走 stderr，不要往 stdout 写东西。
@@ -166,9 +167,11 @@ provenance 签名。这需要在 npmjs.com 的包设置里一次性配置：
 
 > **注意**：npm 的 Trusted Publisher 与仓库名绑定。仓库从 `commandcode-mcp-server`
 > 改名后，旧配置立即失配，`npm publish` 会以 `ENEEDAUTH` 失败且不会提前报错。
-> 1.0.5 是手动 `npm publish` 发的，尚未验证 OIDC 链路——下一次打 tag 前需要
-> 在 npmjs.com 上重建这条配置。`npm trust github` 命令受 granular token 的 2FA
-> 限制，需在网页上操作。
+>
+> 另外，Trusted Publisher 绑定在**具体包**上。包名改成 `@jujijigo/commandcode-search-mcp`
+> 之后就是另一个包，旧包上的配置不会跟过来，需要在 npmjs.com 上为新包重新配置一次
+> 才能恢复 tag 触发的自动发布（1.1.0 是手动 `npm publish` 发的）。
+> `npm trust github` 命令受 granular token 的 2FA 限制，需在网页上操作。
 
 工作流固定用 Node 24，因为 Trusted Publishing 要求 Node ≥ 22.14 且 npm ≥ 11.5.1。
 
