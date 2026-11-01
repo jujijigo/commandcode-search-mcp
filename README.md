@@ -1,4 +1,4 @@
-# commandcode-mcp-server
+# commandcode-search-mcp
 
 把 Command Code 的网页搜索服务封装为 [MCP](https://modelcontextprotocol.io) 服务。
 
@@ -13,9 +13,9 @@ Claude Desktop 等）都可以接入。已发布到 npm，无需预先安装—�
 #### Claude Code
 
 ```bash
-claude mcp add commandcode-mcp-server --scope user \
+claude mcp add commandcode-search-mcp --scope user \
   -e COMMANDCODE_API_KEY=user_xxxxxxxx \
-  -- npx -y commandcode-mcp-server@latest
+  -- npx -y commandcode-search-mcp@latest
 ```
 
 #### 手写 JSON
@@ -25,10 +25,10 @@ claude mcp add commandcode-mcp-server --scope user \
 ```json
 {
   "mcpServers": {
-    "commandcode-mcp-server": {
+    "commandcode-search-mcp": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "commandcode-mcp-server@latest"],
+      "args": ["-y", "commandcode-search-mcp@latest"],
       "env": {
         "COMMANDCODE_API_KEY": "user_xxxxxxxx"
       }
@@ -49,7 +49,7 @@ claude mcp add commandcode-mcp-server --scope user \
 {
   "type": "stdio",
   "command": "cmd",
-  "args": ["/c", "npx", "-y", "commandcode-mcp-server@latest"],
+  "args": ["/c", "npx", "-y", "commandcode-search-mcp@latest"],
   "env": { "COMMANDCODE_API_KEY": "user_xxxxxxxx" }
 }
 ```
@@ -89,8 +89,8 @@ npm start       # 直接从源码启动（需已设置 COMMANDCODE_API_KEY）
 调试时可以看 stderr 上的日志，它会记录每次上游请求的路径、状态码与响应字节数：
 
 ```
-[commandcode-mcp-server] 启动 https://api.commandcode.ai
-[commandcode-mcp-server] POST /alpha/web-search -> 200（1359 字节）
+[commandcode-search-mcp] 启动 https://api.commandcode.ai
+[commandcode-search-mcp] POST /alpha/web-search -> 200（1359 字节）
 ```
 
 stdout 是 stdio 传输的 JSON-RPC 通道，日志一律走 stderr，不要往 stdout 写东西。
@@ -103,7 +103,7 @@ stdout 是 stdio 传输的 JSON-RPC 通道，日志一律走 stderr，不要往 
 {
   "type": "stdio",
   "command": "npx",
-  "args": ["-y", "file:D:/workspace/commandcode-mcp-server"],
+  "args": ["-y", "file:D:/workspace/commandcode-search-mcp"],
   "env": { "COMMANDCODE_API_KEY": "user_xxxxxxxx" }
 }
 ```
@@ -156,7 +156,7 @@ provenance 签名。这需要在 npmjs.com 的包设置里一次性配置：
 | 字段 | 值 |
 | --- | --- |
 | Organization/user | `kywrl` |
-| Repository | `commandcode-mcp-server` |
+| Repository | `commandcode-search-mcp` |
 | Workflow filename | `publish.yml` |
 
 这个配置不匹配时不会提前报错，只会在 `npm publish` 时以 `ENEEDAUTH` 失败。

@@ -183,7 +183,7 @@ async function main() {
 
   // ── 2. 全新安装 ───────────────────────────────────────────────────────
   console.log('\n从 registry 安装');
-  const dir = await mkdtemp(join(tmpdir(), 'cc-verify-'));
+  const dir = await mkdtemp(join(tmpdir(), 'ccsearch-verify-'));
   try {
     await runNpm(['install', `${name}@${version}`, '--no-audit', '--no-fund', '--loglevel=error'], dir);
     ok('安装成功', dir);

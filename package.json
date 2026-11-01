@@ -1,20 +1,20 @@
 {
-  "name": "commandcode-mcp-server",
+  "name": "commandcode-search-mcp",
   "version": "1.0.5",
   "description": "把 Command Code 的网页搜索服务暴露为 MCP 工具，供 Claude Code 等 MCP 客户端使用",
   "type": "module",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kywrl/commandcode-mcp-server.git"
+    "url": "git+https://github.com/kywrl/commandcode-search-mcp.git"
   },
-  "homepage": "https://github.com/kywrl/commandcode-mcp-server#readme",
+  "homepage": "https://github.com/kywrl/commandcode-search-mcp#readme",
   "bugs": {
-    "url": "https://github.com/kywrl/commandcode-mcp-server/issues"
+    "url": "https://github.com/kywrl/commandcode-search-mcp/issues"
   },
   "main": "./src/index.js",
   "bin": {
-    "commandcode-mcp-server": "src/index.js"
+    "commandcode-search-mcp": "src/index.js"
   },
   "files": [
     "src",

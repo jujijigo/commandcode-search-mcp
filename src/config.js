@@ -12,7 +12,7 @@ const DEFAULT_BASE_URL = 'https://api.commandcode.ai';
 /** 上游硬限制：numResults > 10 会返回 400 Too big，< 1 返回 400 Too small。 */
 export const NUM_RESULTS = { min: 1, max: 10, fallback: 5 };
 
-export const SERVER_NAME = 'commandcode-mcp-server';
+export const SERVER_NAME = 'commandcode-search-mcp';
 
 /**
  * 版本号从 package.json 读，不手写常量——两处独立维护必然漂移
