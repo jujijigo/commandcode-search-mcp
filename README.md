@@ -160,7 +160,7 @@ provenance 签名。这需要在 npmjs.com 的包设置里一次性配置：
 
 | 字段 | 值 |
 | --- | --- |
-| Organization/user | `kywrl` |
+| Organization/user | `jujijigo` |
 | Repository | `commandcode-search-mcp` |
 | Workflow filename | `publish.yml` |
 | Environment | （留空） |
@@ -172,6 +172,10 @@ provenance 签名。这需要在 npmjs.com 的包设置里一次性配置：
 > 之后就是另一个包，旧包上的配置不会跟过来，需要在 npmjs.com 上为新包重新配置一次
 > 才能恢复 tag 触发的自动发布（1.1.0 是手动 `npm publish` 发的）。
 > `npm trust github` 命令受 granular token 的 2FA 限制，需在网页上操作。
+>
+> GitHub 用户名从 `kywrl` 改成 `jujijigo` 后，`Organization/user` 字段也要跟着改：
+> OIDC 令牌里的 `repository_owner` 是新的用户名，旧值不再匹配。GitHub 会自动重定向
+> 旧仓库地址，但 npm 的校验是字符串比对，不吃重定向。
 
 工作流固定用 Node 24，因为 Trusted Publishing 要求 Node ≥ 22.14 且 npm ≥ 11.5.1。
 

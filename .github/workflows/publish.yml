@@ -4,7 +4,7 @@ name: Publish
 #
 # 认证走 npm Trusted Publishing（OIDC），不需要任何长期 token。
 # 前置配置（一次性）：在 npmjs.com 的包设置里填 Trusted Publisher —
-#   Organization/user: kywrl
+#   Organization/user: jujijigo
 #   Repository:        commandcode-search-mcp
 #   Workflow filename: publish.yml
 # 该配置不匹配时不会提前报错，只会在 npm publish 时以 ENEEDAUTH 失败。

@@ -6,11 +6,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kywrl/commandcode-search-mcp.git"
+    "url": "git+https://github.com/jujijigo/commandcode-search-mcp.git"
   },
-  "homepage": "https://github.com/kywrl/commandcode-search-mcp#readme",
+  "homepage": "https://github.com/jujijigo/commandcode-search-mcp#readme",
   "bugs": {
-    "url": "https://github.com/kywrl/commandcode-search-mcp/issues"
+    "url": "https://github.com/jujijigo/commandcode-search-mcp/issues"
   },
   "main": "./src/index.js",
   "bin": {
