@@ -6,6 +6,10 @@ stdio 类型，提供 `web_search` 工具，任何支持 MCP 的客户端（Clau
 Claude Desktop 等）都可以接入。已发布到 npm，无需预先安装——`npx` 会在首次
 运行时自动拉取。
 
+> **从 `commandcode-mcp-server` 迁移过来？** 包已更名为 `commandcode-search-mcp`，
+> 环境变量 `COMMANDCODE_API_KEY` / `COMMANDCODE_BASE_URL` 保持不变，
+> 只需把配置里的包名换掉即可。
+
 ## 使用
 
 ### 配置
