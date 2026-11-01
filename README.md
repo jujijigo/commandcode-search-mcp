@@ -162,8 +162,14 @@ provenance 签名。这需要在 npmjs.com 的包设置里一次性配置：
 | Organization/user | `kywrl` |
 | Repository | `commandcode-search-mcp` |
 | Workflow filename | `publish.yml` |
+| Environment | （留空） |
 
-这个配置不匹配时不会提前报错，只会在 `npm publish` 时以 `ENEEDAUTH` 失败。
+> **注意**：npm 的 Trusted Publisher 与仓库名绑定。仓库从 `commandcode-mcp-server`
+> 改名后，旧配置立即失配，`npm publish` 会以 `ENEEDAUTH` 失败且不会提前报错。
+> 1.0.5 是手动 `npm publish` 发的，尚未验证 OIDC 链路——下一次打 tag 前需要
+> 在 npmjs.com 上重建这条配置。`npm trust github` 命令受 granular token 的 2FA
+> 限制，需在网页上操作。
+
 工作流固定用 Node 24，因为 Trusted Publishing 要求 Node ≥ 22.14 且 npm ≥ 11.5.1。
 
 ### 代码结构
